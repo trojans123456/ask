@@ -3,13 +3,16 @@
 
 #include "default.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+C_API_BEGIN
 
 
 declear_handler(hSerial);
 
+/* for purge */
+#define COMM_PURGE_TXABORT			0x0001	//禁止接收
+#define COMM_PURGE_RXABORT			0x0002	//禁止接收
+#define COMM_PURGE_TXCLEAR			0x0004	//清空发送缓存
+#define COMM_PURGE_RXCLEAR			0x0008	//清空接收缓存
 
 typedef enum
 {
@@ -37,44 +40,40 @@ typedef struct
     char	flag;		///< 特殊串口标志，取CommSpecialFlag类型的枚举值。
 } CommAttribute;
 
+/**
+    detach :是否分离,分离模式由线程单独控制
+*/
+hSerial serial_open(const char* tty_dev,uint8_t detach);
 
-//打开串口
-//param:[IN]tty_dev:串口设备文件
-hSerial serial_open(const char* tty_dev);
-
-//关闭串口
+/** 关闭串口 */
 int serial_close(hSerial h);
 
-//设置串口属性
+/** 设置串口属性 */
 int serial_setAttr(hSerial h, const CommAttribute *attr);
 
-//设置串口数据回调函数
+/** 清空缓存*/
+int serial_purge(hSerial h, int dw_flags);
+/** 写 */
+int serial_write(hSerial h, void *pdata, int len);
+/** 读 */
+int serial_read(hSerial h,void *pdata,int len);
+
+/********************************** detach 分离后由线程监控********************/
+/** 设置串口数据回调函数 */
 typedef int (*cb_com_rxdata_func)(hSerial h, char *pdata, int len, void *ctx);
 int serial_setRxDataCallBack(hSerial h, cb_com_rxdata_func cbRxData, void *ctx);
 
 
-//启动comm异步监听
-//time: 允许等待时间，毫秒单位，0: 永久等待
-int serial_start(hSerial h, int time);
+/** 启动comm异步监听
+* time = 0 永久等待*/
+int serial_start(hSerial h);
 
-//关闭comm异步监听
+/** 关闭comm异步监听 */
 int serial_stop(hSerial h);
 
 
-int serial_purge(hSerial h, int dw_flags);
 
 
-int serial_write(hSerial h, void *pdata, int len);
-
-
-
-
-
-
-
-
-#ifdef __cplusplus
-}
-#endif
+C_API_END
 
 #endif

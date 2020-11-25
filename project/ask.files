@@ -11,3 +11,15 @@
 ../source/buffer.c
 ../source/serial.c
 ../source/task.c
+../app/command.c
+../app/command.h
+../include/buffer.h
+../include/default.h
+../include/list.h
+../include/network.h
+../include/serial.h
+../include/task.h
+../source/buffer.c
+../source/network.c
+../source/serial.c
+../source/task.c
