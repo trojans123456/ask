@@ -36,12 +36,16 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="../app/command.h" />
+		<Unit filename="../app/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="../include/buffer.h" />
 		<Unit filename="../include/default.h" />
 		<Unit filename="../include/list.h" />
 		<Unit filename="../include/network.h" />
 		<Unit filename="../include/serial.h" />
 		<Unit filename="../include/task.h" />
+		<Unit filename="../include/timer.h" />
 		<Unit filename="../makefile-arm" />
 		<Unit filename="../makefile-x86" />
 		<Unit filename="../source/buffer.c">
@@ -56,8 +60,14 @@
 		<Unit filename="../source/task.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="../source/timer.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Extensions>
 			<lib_finder disable_auto="1" />
+			<code_completion />
+			<envvars />
+			<debugger />
 		</Extensions>
 	</Project>
 </CodeBlocks_project_file>

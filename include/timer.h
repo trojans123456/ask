@@ -7,11 +7,6 @@ C_API_BEGIN
 
 declear_handler(hTimer);
 
-enum loop_type
-{
-    LOOP_ONCE,
-    LOOP_PERIOD
-};
 
 typedef void (*timeout_event_ptr)(hTimer h,void *ctx);
 

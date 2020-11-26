@@ -14,7 +14,6 @@ typedef struct timeout_event
     timeout_event_ptr cb;
     void *ctx;
     struct timeval time;/*超时时间*/
-    enum loop_type type;
 }timeout_event_t;
 
 typedef struct
