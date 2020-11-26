@@ -25,3 +25,5 @@
 ../source/task.c
 ../app/Makefile
 ../app/main.c
+../source/timer.c
+../include/timer.h

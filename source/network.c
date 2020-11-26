@@ -1164,6 +1164,11 @@ int sock_stop(hSock h)
 
     lapi_mutex_unlock(sock_priv.mtx);
 
+    if(sock_priv.ref == 0)
+    {
+        lapi_mutex_destroy(sock_priv.mtx);
+    }
+
     return 0;
 }
 

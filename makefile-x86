@@ -51,7 +51,7 @@ LIB_SRCS_C = 		\
 		source/serial.c \
 		source/buffer.c \
 		source/network.c \
-
+		source/timer.c \
 
 
 LIB_SRCS_CPP = 		\

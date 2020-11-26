@@ -2,7 +2,7 @@
 #include <string.h>
 #include "task.h"
 #include "network.h"
-
+#include "timer.h"
 
 
 void sock_close_cb(hSock h,void *ctx)
@@ -115,7 +115,7 @@ int cli_main(int argc,char *argv[])
     while(1);
 }
 
-int main(int argc,char *argv[])
+int unix_srv_main(int argc,char *argv[])
 {
     hSock sock = sock_unix("unix_test",1,1);
     if(!sock)
@@ -131,6 +131,36 @@ int main(int argc,char *argv[])
     sock_setRxDataCallBack(sock,&unix_ready);
 
     sock_start(sock);
+
+    while(1) ;
+}
+
+void timer_callback(hTimer h,void *ctx)
+{
+    printf("timer....\n");
+
+    timeout_event_set(h,5000);
+}
+
+void timer1_callback(hTimer h,void *ctx)
+{
+    printf("timer111111\n");
+    timeout_event_set(h,1000);
+}
+
+int main(int argc,char *argv[])
+{
+    hTimer timer = timeout_event_create(5000);
+    if(!timer)
+        return -1;
+
+    timeout_event_set_cb(timer,timer_callback,timer);
+
+    hTimer timer1 = timeout_event_create(1000);
+    timeout_event_set_cb(timer1,timer1_callback,timer1);
+
+    timer_start(timer);
+    timer_start(timer1);
 
     while(1) ;
 }

@@ -544,5 +544,10 @@ int serial_stop(hSerial h)
 
     lapi_mutex_unlock(com_priv.s_comm_mtx);
 
+    if(com_priv.ref == 0)
+    {
+        lapi_mutex_destroy(com_priv.s_comm_mtx);
+    }
+
     return 0;
 }
