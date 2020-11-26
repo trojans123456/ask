@@ -38,6 +38,8 @@ enum
 hSock sock_tcp(const IPAddress *local_addr,int bufsize,int detach);
 hSock sock_udp(const IPAddress *local_addr,int detach);
 
+hSock sock_unix(const char *path, int is_server, int detach);
+
 void sock_close(hSock h);
 void sock_close_async(hSock h); /*异步关闭*/
 
@@ -56,15 +58,15 @@ int sock_recv(hSock h, char *buf, int len);
 
 int sock_setsndbuf(hSock h, int size);
 int sock_setrcvbuf(hSock h, int size);
+int sock_set_reused(hSock h);
 
 int sock_getrmtaddr(hSock h, IPAddress *addr);
 int sock_getlocaladdr(hSock h, IPAddress *addr);
 
-void sock_setctx(hSock h, void *context);
-void *sock_getctx(hSock h);
 
+void sock_set_detach(hSock h);
 int sock_get_fd(hSock h);
-int sock_detach_fd(hSock h);//取出fd，之后sox中不再有fd
+
 
 int sock_get_tcptxbs(hSock h);			// 获取TCP可靠发送缓冲大小
 int sock_get_tcptxbs_used(hSock h);		// 获取TCP可靠发送缓冲已用大小
@@ -95,8 +97,15 @@ int sock_is_reading(hSock h);
 /** 验证socket的事件，将事件细分 */
 void sock_check_event(hSock h, int ev);
 
-typedef void (*cb_recv_data_ptr)(hSock h,void *ctx);
-int sock_setRxDataCallBack(hSock h,cb_recv_data_ptr func,void *ctx);
+typedef struct
+{
+    void (*read_callback)(hSock h,void *priv);
+    void (*close_callback)(hSock h,void *priv);
+    void (*accept_callback)(hSock h,void *priv);
+    void (*connect_callback)(hSock h,void *priv);
+    void *priv;
+}ready_cb_ptr;
+int sock_setRxDataCallBack(hSock h,ready_cb_ptr *func);
 
 
 

@@ -466,6 +466,10 @@ int lapi_thread_kill(hThread th)
     struct thread__ *thread = (struct thread__ *)th;
     if(!thread)
         return -1;
+    /**
+        需要等待tid有值时再kill
+    printf("tid = %d\n",thread->tid);
+    */
     return pthread_kill(thread->tid,SIGKILL);
 }
 int lapi_thread_cancel(hThread th)

@@ -9,6 +9,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <sys/epoll.h>
+#include <sys/un.h>
 #endif
 #include "task.h"
 #include "buffer.h"
@@ -37,8 +38,7 @@ typedef struct
     int is_udp;
     int is_detach;
     writing_func_t wf;
-    cb_recv_data_ptr cb_recv;
-    void *cb_ctx;
+    ready_cb_ptr cb_ready;
     IPAddress rmt_addr;
 }sock_t;
 
@@ -160,6 +160,39 @@ hSock sock_udp(const IPAddress *local_addr, int detach)
     s->is_udp = 1;
 
     return (hSock)s;
+}
+
+hSock sock_unix(const char *path,int is_server,int detach)
+{
+    sock_t *sock = NULL;
+    struct sockaddr_un sun;
+    sun.sun_family = AF_UNIX;
+    if(!path)
+        return NULL;
+    if(strlen(path) >= sizeof(sun.sun_path))
+        return NULL;
+
+    strcpy(sun.sun_path,path);
+
+    int fd = socket(AF_UNIX,SOCK_STREAM,0);
+    if(fd < 0)
+        return NULL;
+    if(is_server > 0)
+    {
+        /* bind */
+        if(bind(fd,(struct sockaddr*)&sun,sizeof(sun)) < 0)
+        {
+            printf("bind error %s \n",strerror(errno));
+            close(fd);
+            return NULL;
+        }
+    }
+    sock = (sock_t*)init_sock(fd,0,0);
+    if(!sock)
+        return NULL;
+
+    sock->is_detach = detach;
+    return (hSock)sock;
 }
 
 void sock_close(hSock h)
@@ -518,6 +551,17 @@ int sock_setrcvbuf(hSock h, int size)
     return 0;
 }
 
+int sock_set_reused(hSock h)
+{
+    sock_t *s = (sock_t *)h;
+    if(!s)
+        return -1;
+
+    const int one = 1;
+    setsockopt(s->fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
+    return 0;
+}
+
 int sock_getrmtaddr(hSock h, IPAddress *addr)
 {
     struct sockaddr_in tAddr;
@@ -574,6 +618,15 @@ int sock_getlocaladdr(hSock h, IPAddress *addr)
     addr->port = (int)ntohs(tAddr.sin_port);
 
     return 0;
+}
+
+void sock_set_detach(hSock h)
+{
+    sock_t *s = (sock_t*)h;
+    if(s)
+    {
+        s->is_detach = 1;
+    }
 }
 
 int sock_get_fd(hSock h)
@@ -831,13 +884,15 @@ static int i_add(ios_t *ios,hSock h)
         return -1;
 
     ev.data.ptr = (void *)h;
-    ev.events = EPOLLIN;/*read */
+    ev.events = EPOLLIN | EPOLLHUP;/*read */
 
     lapi_mutex_lock(ios->mtx);
 
     ret = epoll_ctl(epb->epfd,EPOLL_CTL_ADD,fd,&ev);
+    printf("add ret = %d\n",ret);
     if(ret == 0)
     {
+        printf("epb->num++\n");
         epb->num++;
     }
     lapi_mutex_unlock(ios->mtx);
@@ -992,16 +1047,17 @@ static sock_priv_t sock_priv;
 
 void *sock_recv_task(hThread h,void *p)
 {
-    int i,ev,ret;
+    int i,ev;
     ios_t *ios = NULL;
     if(!p)
         return NULL;
     ios = (ios_t*)p;
     hSock s = NULL;
-
+    sock_t *sock = NULL;
     while(lapi_thread_isrunning(h))
     {
-        ev = ios->wait(ios,0);
+        ev = ios->wait(ios,3600);
+
         if(ev <= 0)
         {
             lapi_sleep(10);
@@ -1011,39 +1067,31 @@ void *sock_recv_task(hThread h,void *p)
         for(i = 0;i < ev;i++)
         {
             s = ios->evarr[i];
+            sock = (sock_t*)s;
             switch(sock_ready(s))
             {
             case SOCK_NEW_SOCKET:
             {
-                IPAddress addr;
-                hSock new_sock = sock_accept(s,TX_BUFSIZE);
-                if(!new_sock)
+                if(sock->cb_ready.accept_callback)
                 {
-                    continue;
-                }
-
-                sock_getrmtaddr(new_sock,&addr);
-
-                /* add epoll */
-                ret = ios->add(ios,new_sock);
-                if(ret < 0)
-                {
-                    sock_close(new_sock);
+                    sock->cb_ready.accept_callback(s,sock->cb_ready.priv);
                 }
             }
                 break;
             case SOCK_CLOSE:
             {
-                //IPAddress addr;
-                //ret = sock_getrmtaddr(s,&addr);
-                ios->del(ios,s);
-                sock_close(s);
+                if(sock->cb_ready.close_callback)
+                {
+                    sock->cb_ready.close_callback(s,sock->cb_ready.close_callback);
+                }
             }
                 break;
             case SOCK_DATA:
             {
-                if(((sock_t*)s)->cb_recv)
-                    ((sock_t*)s)->cb_recv(s,((sock_t*)s)->cb_ctx);
+                if(sock->cb_ready.read_callback)
+                {
+                    sock->cb_ready.read_callback(s,sock->cb_ready.priv);
+                }
             }
                 break;
             default:
@@ -1051,32 +1099,41 @@ void *sock_recv_task(hThread h,void *p)
             }
         }
     }
-
+    printf("2222222222\n");
     return NULL;
 }
 
 int sock_start(hSock h)
 {
+    printf("(((((\n");
     sock_t *sock = (sock_t*)h;
     if(!sock)
+    {
+        printf("sock is NULL\n");
         return -1;
+    }
+
+    printf("#######\n");
     if(sock->is_detach <= 0)
         return -1;
-
+    printf("*****\n");
     if(sock_priv.first == 0)
     {
         sock_priv.mtx = lapi_mutex_create();
         ios_epoll_init(&sock_priv.ios,30);
     }
-
+    printf("sock_priv = %d\n",sock_priv.first);
     lapi_mutex_lock(sock_priv.mtx);
+    printf("sock add....\n");
+    sock_priv.ios.add(&sock_priv.ios,h);
 
     sock_priv.ref++;
     lapi_mutex_unlock(sock_priv.mtx);
-
+    printf("sock_priv = %d\n",sock_priv.first);
     if(sock_priv.first == 0)
     {
         sock_priv.first = 1;
+        printf("3333\n");
         sock_priv.thread = lapi_thread_create(sock_recv_task,&sock_priv.ios,1 << 10 <<10);
     }
 
@@ -1093,6 +1150,8 @@ int sock_stop(hSock h)
 
     lapi_mutex_lock(sock_priv.mtx);
 
+    sock_priv.ios.del(&sock_priv.ios,h);
+
     sock_priv.ref--;
     if(sock_priv.ref == 0)
     {
@@ -1108,16 +1167,26 @@ int sock_stop(hSock h)
     return 0;
 }
 
-int sock_setRxDataCallBack(hSock h, cb_recv_data_ptr func, void *ctx)
+int sock_setRxDataCallBack(hSock h, ready_cb_ptr *func)
 {
     sock_t *s = (sock_t*)h;
     if(!s)
+    {
+        printf("set callback s empty\n");
         return -1;
+    }
+
 
     if(s->is_detach <= 0)
+    {
+        printf("is_detach  = %d\n",s->is_detach);
         return -1;
+    }
 
-    s->cb_recv = func;
-    s->cb_ctx = ctx;
+    s->cb_ready.accept_callback = func->accept_callback;
+    s->cb_ready.close_callback = func->close_callback;
+    s->cb_ready.connect_callback = func->connect_callback;
+    s->cb_ready.read_callback = func->read_callback;
+    s->cb_ready.priv = func->priv;
     return 0;
 }

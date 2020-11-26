@@ -23,3 +23,5 @@
 ../source/network.c
 ../source/serial.c
 ../source/task.c
+../app/Makefile
+../app/main.c
