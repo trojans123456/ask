@@ -38,3 +38,9 @@
 ../source/ev_kqueue.c
 ../source/ev_select.c
 ../source/event.c
+../source/crc.c
+../include/crc.h
+../include/can.h
+../include/crc.h
+../source/can.c
+../source/crc.c

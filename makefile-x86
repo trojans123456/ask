@@ -56,6 +56,8 @@ LIB_SRCS_C = 		\
 		source/ev_epoll.c \
 		source/ev_select.c \
 		source/ev_kqueue.c \
+		source/crc.c \
+		source/can.c \
 
 
 LIB_SRCS_CPP = 		\
