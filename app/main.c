@@ -3,7 +3,7 @@
 #include "task.h"
 #include "network.h"
 #include "timer.h"
-
+#include "event.h"
 
 void sock_close_cb(hSock h,void *ctx)
 {
@@ -148,7 +148,7 @@ void timer1_callback(hTimer h,void *ctx)
     timeout_event_set(h,1000);
 }
 
-int main(int argc,char *argv[])
+int timer_main(int argc,char *argv[])
 {
     hTimer timer = timeout_event_create(5000);
     if(!timer)
@@ -163,4 +163,30 @@ int main(int argc,char *argv[])
     timer_start(timer1);
 
     while(1) ;
+}
+
+
+
+int time_proc(struct evEventLoop *loop,long long id,void *priv)
+{
+    int *cnt = (int *)priv;
+    if(!cnt)
+        return -1;
+    (*cnt)++;
+    printf("cnt = %d\n",*cnt);
+
+    return 1000;
+}
+
+int main(int argc,char *argv[])
+{
+    evEventLoop *loop;
+    loop = evCreateEventLoop();
+
+    int cnt = 0;
+    evCreateTimeEvent(loop,1000,time_proc,&cnt,NULL);
+
+    evMain(loop);
+    evDeleteEventLoop(loop);
+    return 0;
 }

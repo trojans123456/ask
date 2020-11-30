@@ -21,7 +21,7 @@ STRIP	= @echo " strip  $@"; $(CROSS)strip
 
 ###################项目路径和程序名称#################################
 CFLAGS += -Wall -O -Os
-CFLAGS += -D_REENTRANT
+CFLAGS += -D_REENTRANT  -DUSED_EPOLL
 
 LDFLAGS +=	-lpthread -static
 #LDFLAGS += "-Wl"
@@ -52,6 +52,10 @@ LIB_SRCS_C = 		\
 		source/buffer.c \
 		source/network.c \
 		source/timer.c \
+		source/event.c \
+		source/ev_epoll.c \
+		source/ev_select.c \
+		source/ev_kqueue.c \
 
 
 LIB_SRCS_CPP = 		\
