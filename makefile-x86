@@ -58,6 +58,7 @@ LIB_SRCS_C = 		\
 		source/ev_kqueue.c \
 		source/crc.c \
 		source/can.c \
+		source/input.c \
 
 
 LIB_SRCS_CPP = 		\

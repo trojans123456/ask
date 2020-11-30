@@ -4,6 +4,7 @@
 #include "network.h"
 #include "timer.h"
 #include "event.h"
+#include "input.h"
 
 void sock_close_cb(hSock h,void *ctx)
 {
@@ -178,7 +179,7 @@ int time_proc(struct evEventLoop *loop,long long id,void *priv)
     return 1000;
 }
 
-int main(int argc,char *argv[])
+int event_main(int argc,char *argv[])
 {
     evEventLoop *loop;
     loop = evCreateEventLoop();
@@ -189,4 +190,22 @@ int main(int argc,char *argv[])
     evMain(loop);
     evDeleteEventLoop(loop);
     return 0;
+}
+
+void input_proc(hInput h,void *data)
+{
+
+}
+
+int main(int argc,char *argv[])
+{
+    hInput input = input_open("/dev/input/event4");
+    if(!input)
+        return 0;
+
+    input_setRxDataFunc(input,input_proc,NULL);
+
+    input_start(input);
+
+    while(1) ;
 }

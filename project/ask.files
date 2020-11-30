@@ -44,3 +44,5 @@
 ../include/crc.h
 ../source/can.c
 ../source/crc.c
+../include/input.h
+../source/input.c
