@@ -590,6 +590,12 @@ __u16 code; //要模拟成什么按键
 __s32 value;//是按下还是释放
 
 };
+
+EV_KEY,键盘
+
+EV_REL,相对坐标
+
+EV_ABS,绝对坐标
 */
 
 void *input_recv_task(hThread h,void *p)
