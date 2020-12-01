@@ -81,7 +81,7 @@ int lapi_mutex_lock(hMutex mtx)
     if(!mutex)
         return -1;
     int ret = pthread_mutex_lock(&mutex->mtx);
-    printf("ret = %d\n",ret);
+    //printf("ret = %d\n",ret);
     if(ret == EOWNERDEAD)
     {
         /* 恢复该锁的一致性*/

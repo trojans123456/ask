@@ -12,7 +12,8 @@ hInput input_open(const char *name);
 
 int input_close(hInput h);
 
-typedef void (*cb_input_rxdata_func)(hInput h,void *data);
+/** key 是哪个按键  pressed 是按下还是松开*/
+typedef void (*cb_input_rxdata_func)(hInput h,int key,int pressed,void *ctx);
 int input_setRxDataFunc(hInput h,cb_input_rxdata_func func,void *ctx);
 
 int input_start(hInput h);

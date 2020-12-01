@@ -192,20 +192,28 @@ int event_main(int argc,char *argv[])
     return 0;
 }
 
-void input_proc(hInput h,void *data)
+void input_proc(hInput h,int key,int pressed,void *ctx)
 {
-
+    printf("key = %d value = %d\n",key,pressed);
 }
 
 int main(int argc,char *argv[])
 {
-    hInput input = input_open("/dev/input/event4");
+    hInput input = input_open("/dev/input/event1");
     if(!input)
         return 0;
 
     input_setRxDataFunc(input,input_proc,NULL);
 
     input_start(input);
+
+    hInput mouse = input_open("/dev/input/event2");
+    if(!mouse)
+        return 0;
+
+    input_setRxDataFunc(mouse,input_proc,NULL);
+
+    input_start(mouse);
 
     while(1) ;
 }
